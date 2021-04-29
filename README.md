@@ -25,7 +25,7 @@ This script is written in bash.
 
 # Installing
 
-    wget -O immutable-backup.sh https://github.com/emmetog/immutable-offsite-backups/blob/main/immutable-backup.sh
+    wget -O immutable-backup.sh https://github.com/emmetog/immutable-backups/blob/main/immutable-backups.sh
     chmod 0700 immutable-backup.sh
 
 # Contributing
