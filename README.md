@@ -17,6 +17,12 @@ it doesn't modify or delete anything once written.
 Also recommended to use lifecycle actions to remove objects after a time has elapsed if needed, or another process
 with DELETE permissions can be used if that's not available.
 
+# Features
+
+* Works in "immutable storage" situations, when the backup agent only has permission to write, not modify or delete
+* Can perform both full backups and incremental backups
+* Can restore from both full backups and incremental backups
+
 # Requirements
 
 rclone must be installed and the remotes must be already configured.
