@@ -23,6 +23,22 @@ with DELETE permissions can be used if that's not available.
 * Can perform both full backups and incremental backups
 * Can restore from both full backups and incremental backups
 
+# Example of permissions in Google Cloud Storage
+
+First a service account should be created with the following permissions:
+
+* storage.objects.create
+* storage.objects.get
+* storage.objects.list
+
+Give this service account access to the buckets you'll backup to.
+
+If you are considering using different retention periods (eg monthly backups for 12 months, weekly backups for
+4 weeks, daily backups for 7 days, etc) then create different buckets for each and apply the retention periods
+to enforce the immutability, with lifecycle operations to cleanup once the retention period expires. Incremental
+backups should not be cleaned up ever, otherwise you'll lose data, but retention periods are still a good idea
+to give that extra immutability guarantee.
+
 # Requirements
 
 rclone must be installed and the remotes must be already configured.
