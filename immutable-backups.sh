@@ -4,7 +4,7 @@ set -e
 
 function showHelpCommands {
     echo ""
-    echo "Usage: `basename $0` [command]"
+    echo "Usage: $(basename $0) [command]"
     echo ""
     echo "    where [command] is one of the following:"
     echo ""
@@ -12,7 +12,7 @@ function showHelpCommands {
     echo "         restore            Restore a backup"
     echo ""
     echo "    For more detailed information on each command, use:"
-    echo "        `basename $0` [command] --help"
+    echo "        $(basename $0) [command] --help"
     echo ""
     echo "Notes:"
     echo "  * This requires rclone to be installed and the remotes to be configured on this system. See the rclone"
@@ -23,7 +23,7 @@ function showHelpCommands {
 
 function showHelpBackup {
     echo ""
-    echo "Usage: `basename $0` backup --local=[local] --remote=[remote] (--incremental) (--dry-run)"
+    echo "Usage: $(basename $0) backup --local=[local] --remote=[remote] (--incremental) (--dry-run)"
     echo ""
     echo "    where:"
     echo ""
@@ -38,10 +38,10 @@ function showHelpBackup {
     echo ""
     echo "Examples:"
     echo "    # Take an incremental backup of a local directory to offsite"
-    echo "    `basename $0` backup --local=/path/to/files --remote=your-remote: --incremental --dry-run"
+    echo "    $(basename $0) backup --local=/path/to/files --remote=your-remote: --incremental --dry-run"
     echo ""
     echo "    # Take an full backup of a local directory to offsite"
-    echo "    `basename $0` backup --local=/path/to/files --remote=your-remote: --dry-run"
+    echo "    $(basename $0) backup --local=/path/to/files --remote=your-remote: --dry-run"
     echo ""
     echo "Notes:"
     echo "  * This requires rclone to be installed and the remotes to be configured on this system. See the rclone"
@@ -52,7 +52,7 @@ function showHelpBackup {
 
 function showHelpRestore {
     echo ""
-    echo "Usage: `basename $0` restore --source=[source] --remote=[remote] (--date=[date]) (--incremental) (--dry-run)"
+    echo "Usage: $(basename $0) restore --source=[source] --remote=[remote] (--date=[date]) (--incremental) (--dry-run)"
     echo ""
     echo "    where:"
     echo ""
@@ -68,13 +68,13 @@ function showHelpRestore {
     echo ""
     echo "Examples:"
     echo "    # Restore the latest version of an incremental backup"
-    echo "    `basename $0` restore --remote=your-remote: --local=/path/to/put/restored --incremental --dry-run"
+    echo "    $(basename $0) restore --remote=your-remote: --local=/path/to/put/restored --incremental --dry-run"
     echo ""
     echo "    # Restore the latest version of a full backup"
-    echo "    `basename $0` restore --remote=your-remote: --local=/path/to/put/restored --dry-run"
+    echo "    $(basename $0) restore --remote=your-remote: --local=/path/to/put/restored --dry-run"
     echo ""
     echo "    # Restore a specific point in time incremental backup"
-    echo "    `basename $0` restore --remote=your-remote: --local=/path/to/put/restored --date=2021-04-21-183015 --dry-run"
+    echo "    $(basename $0) restore --remote=your-remote: --local=/path/to/put/restored --date=2021-04-21-183015 --dry-run"
     echo ""
     echo "Notes:"
     echo "  * This requires rclone to be installed and the remotes to be configured on this system. See the rclone"
@@ -113,23 +113,28 @@ if [ "$operation" == "backup" ]; then
                             showHelpBackup
                             ;;
                     --incremental*)
-                            export incremental=true
+                            incremental=true
+                            export incremental
                             shift
                             ;;
                     --dry-run*)
-                            export dry_run_flag="--dry-run"
+                            dry_run_flag="--dry-run"
+                            export dry_run_flag
                             shift
                             ;;
                     --local*)
-                            export local=`echo $1 | sed -e 's/^[^=]*=//g'`
+                            local=$(echo $1 | sed -e 's/^[^=]*=//g')
+                            export local
                             shift
                             ;;
                     --remote*)
-                            export remote=`echo $1 | sed -e 's/^[^=]*=//g'`
+                            remote=$(echo $1 | sed -e 's/^[^=]*=//g')
+                            export remote
                             shift
                             ;;
                     --verbose*)
-                            export verbose_flag=" -vv"
+                            verbose_flag=" -vv"
+                            export verbose_flag
                             shift
                             ;;
                     *)
@@ -150,7 +155,7 @@ if [ "$operation" == "backup" ]; then
 
     if [ $incremental == true ]
     then
-        echo "`date` Starting incremental backup"
+        echo "$(date) Starting incremental backup"
 
         # Get the latest previous incremental backup
         compareDestFlags=($($RCLONE_BIN lsf --dir-slash=false ${remote}/incremental))
@@ -167,7 +172,7 @@ if [ "$operation" == "backup" ]; then
         $RCLONE_BIN copy --no-traverse --immutable ${local} ${remote}/incremental/$(date +"%Y-%m-%d-%H%M%S") ${dry_run_flag} ${compareDestFlags[*]} ${verbose_flag}
 
     else
-         echo "`date` Starting full backup"
+         echo "$(date) Starting full backup"
 
         $RCLONE_BIN copy --no-traverse --immutable ${local} ${remote}/full/$(date +"%Y-%m-%d-%H%M%S") ${dry_run_flag} ${verbose_flag}
     fi
@@ -187,15 +192,15 @@ elif [ "$operation" == "restore" ]; then
                             shift
                             ;;
                     --local*)
-                            export local=`echo $1 | sed -e 's/^[^=]*=//g'`
+                            export local=$(echo $1 | sed -e 's/^[^=]*=//g')
                             shift
                             ;;
                     --remote*)
-                            export remote=`echo $1 | sed -e 's/^[^=]*=//g'`
+                            export remote=$(echo $1 | sed -e 's/^[^=]*=//g')
                             shift
                             ;;
                     --date*)
-                            export date=`echo $1 | sed -e 's/^[^=]*=//g'`
+                            export date=$(echo $1 | sed -e 's/^[^=]*=//g')
                             shift
                             ;;
                     --verbose*)
@@ -216,11 +221,11 @@ elif [ "$operation" == "restore" ]; then
       exit 1
     fi
 
-    echo "`date` Starting!"
+    echo "$(date) Starting!"
 
     # Ensure the destination doesn't have anything in there, for protection
     if [ ! -z "$(ls -A $local)" ]; then
-       echo "`date` Error: The local directory ${local} exists and has contents in it, cannot restore into a non-empty directory"
+       echo "$(date) Error: The local directory ${local} exists and has contents in it, cannot restore into a non-empty directory"
        exit 1
     fi
 
@@ -283,7 +288,7 @@ elif [ "$operation" == "restore" ]; then
 
             percentComplete=$(( $index*100/$cnt ))
 
-            echo "`date` processing backup: $prevBackup $counter/$cnt ($percentComplete%)"
+            echo "$(date) processing backup: $prevBackup $counter/$cnt ($percentComplete%)"
 
             $RCLONE_BIN copy --no-traverse ${remote}/incremental/${prevBackup} ${local} ${dry_run_flag} ${verbose_flag}
         done
@@ -333,7 +338,7 @@ else
     showHelpCommands
 fi
 
-echo "`date` Done!"
+echo "$(date) Done!"
 
 exit 0
 
