@@ -158,7 +158,7 @@ if [ "$operation" == "backup" ]; then
         echo "$(date) Starting incremental backup"
 
         # Get the latest previous incremental backup
-        compareDestFlags=($($RCLONE_BIN lsf --dir-slash=false ${remote}/incremental))
+        mapfile -t compareDestFlags < <($RCLONE_BIN lsf --dir-slash=false ${remote}/incremental)
 
         cnt=${#compareDestFlags[@]}
 
@@ -234,7 +234,7 @@ elif [ "$operation" == "restore" ]; then
         echo "Starting restore of incremental backup"
 
         # Get the previous incremental backups
-        prevBackups=($($RCLONE_BIN lsf --dir-slash=false ${remote}/incremental/))
+        mapfile -t prevBackups < <($RCLONE_BIN lsf --dir-slash=false ${remote}/incremental/)
 
         # Sort the previous backups oldest first
         IFS=$'\n' prevBackups=($(sort <<<"${prevBackups[*]}"))
@@ -294,9 +294,9 @@ elif [ "$operation" == "restore" ]; then
         done
 
     else
-         echo "Starting restore of full backup"
+        echo "Starting restore of full backup"
 
-        prevBackups=($($RCLONE_BIN lsf --dir-slash=false ${remote}/full/))
+        mapfile -t prevBackups < <($RCLONE_BIN lsf --dir-slash=false ${remote}/full/)
 
         # Sort the previous backups newest first
         IFS=$'\n' prevBackups=($(sort -r <<<"${prevBackups[*]}"))
