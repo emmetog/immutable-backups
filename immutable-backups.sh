@@ -284,9 +284,9 @@ elif [ "$operation" == "restore" ]; then
 
             prevBackup=${datesToRestore[$index]}
 
-            counter=$(($index+1))
+            counter=$(( index+1 ))
 
-            percentComplete=$(( $index*100/$cnt ))
+            percentComplete=$(( index*100/cnt ))
 
             echo "$(date) processing backup: $prevBackup $counter/$cnt ($percentComplete%)"
 
