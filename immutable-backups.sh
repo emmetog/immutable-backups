@@ -184,27 +184,33 @@ elif [ "$operation" == "restore" ]; then
                             showHelpRestore
                             ;;
                     --incremental*)
-                            export incremental=true
+                            incremental=true
+                            export incremental
                             shift
                             ;;
                     --dry-run*)
-                            export dry_run_flag="--dry-run"
+                            dry_run_flag="--dry-run"
+                            export dry_run_flag
                             shift
                             ;;
                     --local*)
-                            export local=$(echo $1 | sed -e 's/^[^=]*=//g')
+                            local=$(echo $1 | sed -e 's/^[^=]*=//g')
+                            export local
                             shift
                             ;;
                     --remote*)
-                            export remote=$(echo $1 | sed -e 's/^[^=]*=//g')
+                            remote=$(echo $1 | sed -e 's/^[^=]*=//g')
+                            export remote
                             shift
                             ;;
                     --date*)
-                            export date=$(echo $1 | sed -e 's/^[^=]*=//g')
+                            date=$(echo $1 | sed -e 's/^[^=]*=//g')
+                            export date
                             shift
                             ;;
                     --verbose*)
-                            export verbose_flag=" -vv"
+                            verbose_flag=" -vv"
+                            export verbose_flag
                             shift
                             ;;
                     *)
