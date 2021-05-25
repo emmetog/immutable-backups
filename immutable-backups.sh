@@ -348,10 +348,3 @@ echo "$(date) Done!"
 
 exit 0
 
-
-# Test plan:
-#  - test incremental backup and restore
-#     - when files are added and change
-#  - test full backup and restore
-#     - when files are added and change
-
