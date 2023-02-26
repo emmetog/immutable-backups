@@ -2,6 +2,20 @@
 
 set -e
 
+function do_rclone() {
+    "$@"
+    ret=$?
+    if [[ $ret -eq 0 ]]
+    then
+        if [ "${verbose_flag}" != "" ]
+        then
+            echo "Successfully ran [ $@ ]"
+        fi
+    else
+        echo "Error: Command [ $@ ] returned $ret"
+    fi
+}
+
 function showHelpCommands {
     echo ""
     echo "Usage: $(basename $0) [command]"
@@ -33,6 +47,7 @@ function showHelpBackup {
     echo "    optional:"
     echo ""
     echo "         --incremental      If specified, the backup is incremental instead of full"
+    echo "         --rclone-params    If specified, these parameters will be applied to the rclone call"
     echo "         --dry-run          If specified, dont copy anything, just test"
     echo "         --verbose          If specified, output is more verbose"
     echo ""
@@ -42,6 +57,9 @@ function showHelpBackup {
     echo ""
     echo "    # Take an full backup of a local directory to offsite"
     echo "    $(basename $0) backup --local=/path/to/files --remote=your-remote: --dry-run"
+    echo ""
+    echo "    # Take full backup with rclone parameters, with progress bar and upload limit to 1M and download limit to unlimited"
+    echo "    $(basename $0) backup --local=/path/to/files --remote=your-remote: --rclone-params=\" -P --bwlimit 1M:off\""
     echo ""
     echo "Notes:"
     echo "  * This requires rclone to be installed and the remotes to be configured on this system. See the rclone"
@@ -63,6 +81,7 @@ function showHelpRestore {
     echo ""
     echo "         --date             A date in the format Y-M-d-Hms to restore, default is to use the latest backup date found"
     echo "         --incremental      Should be specified if the backup being restored was incremental"
+    echo "         --rclone-params    If specified, these parameters will be applied to the rclone call"
     echo "         --dry-run          If specified, dont copy anything, just test"
     echo "         --verbose          If specified, output is more verbose"
     echo ""
@@ -72,6 +91,9 @@ function showHelpRestore {
     echo ""
     echo "    # Restore the latest version of a full backup"
     echo "    $(basename $0) restore --remote=your-remote: --local=/path/to/put/restored --dry-run"
+    echo ""
+    echo "    # Restore the latest version of a full backup with rclone parameters, with progress bar and upload limit to 1M and download limit to 10M"
+    echo "    $(basename $0) restore --local=/path/to/files --remote=your-remote: --rclone-params=\" -P --bwlimit 1M:10M\""
     echo ""
     echo "    # Restore a specific point in time incremental backup"
     echo "    $(basename $0) restore --remote=your-remote: --local=/path/to/put/restored --date=2021-04-21-183015 --dry-run"
@@ -90,6 +112,7 @@ function showHelpRestore {
 # Set default options
 operation=""
 incremental=false
+rclone_params=""
 local=""
 remote=""
 date=""
@@ -115,6 +138,11 @@ if [ "$operation" == "backup" ]; then
                     --incremental*)
                             incremental=true
                             export incremental
+                            shift
+                            ;;
+                    --rclone-params*)
+                            rclone_params=$(echo $1 | sed -e 's/^[^=]*=//g')
+                            export rclone_params
                             shift
                             ;;
                     --dry-run*)
@@ -169,12 +197,12 @@ if [ "$operation" == "backup" ]; then
             compareDestFlags[i]=" --compare-dest=${remote}/incremental/${path}"
         done
 
-        $RCLONE_BIN copy --no-traverse --immutable ${local} ${remote}/incremental/$(date +"%Y-%m-%d-%H%M%S") ${dry_run_flag} ${compareDestFlags[*]} ${verbose_flag}
+        do_rclone $RCLONE_BIN copy --no-traverse --immutable ${local} ${remote}/incremental/$(date +"%Y-%m-%d-%H%M%S") ${dry_run_flag} ${compareDestFlags[*]} ${verbose_flag} ${rclone_params}
 
     else
-         echo "$(date) Starting full backup"
+        echo "$(date) Starting full backup"
 
-        $RCLONE_BIN copy --no-traverse --immutable ${local} ${remote}/full/$(date +"%Y-%m-%d-%H%M%S") ${dry_run_flag} ${verbose_flag}
+        do_rclone $RCLONE_BIN copy --no-traverse --immutable ${local} ${remote}/full/$(date +"%Y-%m-%d-%H%M%S") ${dry_run_flag} ${verbose_flag} ${rclone_params}
     fi
 elif [ "$operation" == "restore" ]; then
 
@@ -186,6 +214,11 @@ elif [ "$operation" == "restore" ]; then
                     --incremental*)
                             incremental=true
                             export incremental
+                            shift
+                            ;;
+                    --rclone-params*)
+                            rclone_params=$(echo $1 | sed -e 's/^[^=]*=//g')
+                            export rclone_params
                             shift
                             ;;
                     --dry-run*)
@@ -296,7 +329,7 @@ elif [ "$operation" == "restore" ]; then
 
             echo "$(date) processing backup: $prevBackup $counter/$cnt ($percentComplete%)"
 
-            $RCLONE_BIN copy --no-traverse ${remote}/incremental/${prevBackup} ${local} ${dry_run_flag} ${verbose_flag}
+            do_rclone $RCLONE_BIN copy --no-traverse ${remote}/incremental/${prevBackup} ${local} ${dry_run_flag} ${verbose_flag} ${rclone_params}
         done
 
     else
@@ -337,7 +370,7 @@ elif [ "$operation" == "restore" ]; then
             remote="$remote/full/${prevBackups[0]}"
         fi
 
-        $RCLONE_BIN copy --no-traverse --immutable ${remote} ${local} ${dry_run_flag} ${verbose_flag}
+        do_rclone $RCLONE_BIN copy --no-traverse --immutable ${remote} ${local} ${dry_run_flag} ${verbose_flag} ${rclone_params}
     fi
 else
     # Invalid operation
