@@ -23,7 +23,7 @@ function showHelpCommands {
 
 function showHelpBackup {
     echo ""
-    echo "Usage: $(basename $0) backup --local=[local] --remote=[remote] (--incremental) (--dry-run)"
+    echo "Usage: $(basename $0) backup --local=[local] --remote=[remote] (--incremental) (--modified-within=[age]) (--dry-run)"
     echo ""
     echo "    where:"
     echo ""
@@ -33,6 +33,7 @@ function showHelpBackup {
     echo "    optional:"
     echo ""
     echo "         --incremental      If specified, the backup is incremental instead of full"
+    echo "         --modified-within=[age]  If specified, only consider files modified within [age] (e.g. 30d, 72h, 12w)"
     echo "         --dry-run          If specified, dont copy anything, just test"
     echo "         --verbose          If specified, output is more verbose"
     echo ""
@@ -42,6 +43,9 @@ function showHelpBackup {
     echo ""
     echo "    # Take an full backup of a local directory to offsite"
     echo "    $(basename $0) backup --local=/path/to/files --remote=your-remote: --dry-run"
+    echo ""
+    echo "    # Take an incremental backup considering only files modified in the last 30 days"
+    echo "    $(basename $0) backup --local=/path/to/files --remote=your-remote: --incremental --modified-within=30d --dry-run"
     echo ""
     echo "Notes:"
     echo "  * This requires rclone to be installed and the remotes to be configured on this system. See the rclone"
@@ -100,6 +104,8 @@ date=""
 incrementalDateStart=""
 dry_run_flag=""
 verbose_flag=""
+modified_within=""
+max_age_flag=""
 RCLONE_BIN=${RCLONE_BIN:-/usr/bin/rclone}
 
 if [ "$1" == "backup" ]; then
@@ -142,6 +148,13 @@ if [ "$operation" == "backup" ]; then
                             export verbose_flag
                             shift
                             ;;
+                    --modified-within*)
+                            modified_within=$(echo $1 | sed -e 's/^[^=]*=//g')
+                            max_age_flag="--max-age=${modified_within}"
+                            export modified_within
+                            export max_age_flag
+                            shift
+                            ;;
                     *)
                             shift
                             continue
@@ -174,12 +187,12 @@ if [ "$operation" == "backup" ]; then
             compareDestFlags[i]=" --compare-dest=${remote}/incremental/${path}"
         done
 
-        $RCLONE_BIN copy --no-traverse --immutable --copy-links ${local} ${remote}/incremental/$(date +"%Y-%m-%d-%H%M%S") ${dry_run_flag} ${compareDestFlags[*]} ${verbose_flag}
+        $RCLONE_BIN copy --no-traverse --immutable --copy-links ${local} ${remote}/incremental/$(date +"%Y-%m-%d-%H%M%S") ${dry_run_flag} ${compareDestFlags[*]} ${max_age_flag} ${verbose_flag}
 
     else
          echo "$(date) Starting full backup"
 
-        $RCLONE_BIN copy --no-traverse --immutable --copy-links ${local} ${remote}/full/$(date +"%Y-%m-%d-%H%M%S") ${dry_run_flag} ${verbose_flag}
+        $RCLONE_BIN copy --no-traverse --immutable --copy-links ${local} ${remote}/full/$(date +"%Y-%m-%d-%H%M%S") ${dry_run_flag} ${max_age_flag} ${verbose_flag}
     fi
 elif [ "$operation" == "restore" ]; then
 
